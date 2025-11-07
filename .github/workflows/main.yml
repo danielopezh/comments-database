@@ -4,7 +4,7 @@ on:
     branches: ["main"]
   workflow_dispatch:
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +22,20 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/comments-database:${{ github.run_number }}
 
-      - name: Update Helm Chart
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.0
+
+      - name: Login to OpenShift
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+
+      - name: Deploy Database
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git clone https://${{ secrets.GH_TOKEN }}@github.com/danielopezh/comments-helm-chart.git
-          cd comments-helm-chart
-          sed -i '/database:/,$ { s/tag: [0-9]*/tag: ${{ github.run_number }}/; }' comments-chart/values.yaml
-          git add comments-chart/values.yaml
-          git commit -m "Update database tag to ${{ github.run_number }}"
-          git push
+          git clone https://github.com/danielopezh/reto.git
+          cd reto
+          helm upgrade --install database ./charts/microservice-chart -f ./values/database/values.yaml \
+            --set image.tag=${{ github.run_number }}
