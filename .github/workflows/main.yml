@@ -66,4 +66,4 @@ jobs:
       - name: Deploy Database
         run: |
           helm uninstall database || true
-          helm upgrade --install database oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}/comments-chart --version 21 --values values.yaml
+          helm upgrade --install database oci://registry-1.docker.io/${{ secrets.DOCKER_USERNAME }}/comments-chart --version 26 --values values.yaml
